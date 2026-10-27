@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1b1410">
+<title>Sviten Special · Heads-Up</title>
+<meta name="description" content="Play heads-up pot-limit Sviten Special with a friend. Share a link, take a seat, deal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow table column. Seats bar, opponent on top, board and pot in the middle, your hand and controls at the bottom */
+:root{
+  --felt:#123b3a; --felt-deep:#0a2425; --rail:#1b1410; --brass:#d6a84e; --brass-dim:#8f7236;
+  --ivory:#f4efe2; --ink:#e7efe9; --muted:#93b0a9; --line:rgba(214,168,78,.28);
+  --win:#7fd49b; --lose:#e58a7a;
+  --s0:#1d1d1d; --s1:#c52e2e; --s2:#2356c4; --s3:#1d8a4b;
+  --display:"Big Shoulders Display", Impact, "Arial Narrow", sans-serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--rail);color:var(--ink);margin:0}
+body{font-family:var(--body);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+.wrap{max-width:520px;margin:0 auto;padding-top:max(14px, env(safe-area-inset-top, 0px));padding-bottom:max(28px, env(safe-area-inset-bottom, 0px));padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:12px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.04em;text-transform:uppercase;margin:0;color:var(--brass);line-height:1}
+.conn{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
+.conn::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--lose)}
+.conn.on::before{background:var(--win)}
+.sub{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em}
+.panel{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--felt-deep);display:flex;flex-direction:column;gap:10px}
+.panel h2{font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:.08em;text-transform:uppercase;margin:0;color:var(--brass)}
+.panel p{margin:0;color:var(--muted)}
+label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+input[type=text]{font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--rail);color:var(--ink);width:100%;min-width:0}
+.seats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seatcard{border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--felt-deep);display:flex;flex-direction:column;gap:4px;min-width:0}
+.seatcard .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.seatcard .who{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seatcard.mine{border-color:var(--brass)}
+.invite{display:flex;gap:8px;align-items:center}
+.invite code{flex:1;min-width:0;font-family:var(--mono);font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:all}
+.table{background:radial-gradient(ellipse at 50% 40%, var(--felt) 0%, var(--felt-deep) 100%);border:2px solid var(--brass-dim);border-radius:22px;padding:14px 12px;display:flex;flex-direction:column;gap:14px;box-shadow:inset 0 0 40px rgba(0,0,0,.45)}
+.seat{display:flex;flex-direction:column;gap:6px;align-items:center}
+.seat-head{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:13px}
+.name{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.08em;text-transform:uppercase;max-width:60vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stack{font-family:var(--mono);color:var(--brass)}
+.chip{font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.chip.btn{background:var(--brass);color:var(--rail);border-color:var(--brass);font-weight:600}
+.betline{font-family:var(--mono);font-size:13px;min-height:18px;color:var(--ivory)}
+.cards{display:flex;gap:6px;justify-content:center;min-height:20px}
+.card{width:clamp(46px,15.5vw,62px);aspect-ratio:5/7;border-radius:7px;background:var(--ivory);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:600;box-shadow:0 2px 0 rgba(0,0,0,.35);transition:transform .15s ease;user-select:none;-webkit-user-select:none;position:relative}
+.card .r{font-size:clamp(18px,5.4vw,24px);line-height:1}
+.card .s{font-size:clamp(16px,4.8vw,21px);line-height:1}
+.card.s0{color:var(--s0)}.card.s1{color:var(--s1)}.card.s2{color:var(--s2)}.card.s3{color:var(--s3)}
+.card.back{background:repeating-linear-gradient(45deg,var(--brass-dim) 0 4px,var(--rail) 4px 8px);border:2px solid var(--brass)}
+.card.empty{background:transparent;border:1.5px dashed var(--line);box-shadow:none}
+.card.pick{cursor:pointer}
+.card.sel{transform:translateY(-10px);outline:3px solid var(--lose);outline-offset:1px}
+.card.sel::after{content:"swap";position:absolute;bottom:-18px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--lose)}
+.card.exposed{outline:3px solid var(--brass);outline-offset:1px;transform:translateY(-10px)}
+.card.exposed::after{content:"face up";position:absolute;bottom:-18px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);white-space:nowrap}
+.card.shown{box-shadow:0 0 0 2px var(--brass)}
+.card.shown::after{content:"shown";position:absolute;bottom:-17px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+.mid{display:flex;flex-direction:column;align-items:center;gap:8px}
+.pot{font-family:var(--mono);font-size:14px;color:var(--brass)}
+.street{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.read{font-size:13px;color:var(--muted);text-align:center;min-height:19px}
+.read b{color:var(--ink);font-weight:500}
+.controls{display:flex;flex-direction:column;gap:10px;background:var(--felt-deep);border:1px solid var(--line);border-radius:14px;padding:12px}
+.controls:empty{display:none}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row > button{flex:1 1 0;min-width:0}
+button{font-family:var(--body);font-weight:600;font-size:15px;border-radius:10px;padding:12px 10px;border:1px solid var(--line);background:#16302f;color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,input:focus-visible,summary:focus-visible,.card:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+button.primary{background:var(--brass);color:var(--rail);border-color:var(--brass)}
+button.fold{background:transparent;color:var(--lose);border-color:rgba(229,138,122,.5)}
+button.small{font-size:12px;padding:7px 8px;font-weight:500}
+button.link{background:transparent;border:none;color:var(--muted);font-size:12px;font-weight:500;padding:4px 0;text-decoration:underline}
+button:disabled{opacity:.35;cursor:default}
+.slider{display:flex;align-items:center;gap:10px}
+.slider input{flex:1;accent-color:var(--brass);min-width:0}
+.slider output{font-family:var(--mono);color:var(--brass);min-width:56px;text-align:right}
+.status{text-align:center;font-size:14px;min-height:21px}
+.status .w{color:var(--win)} .status .l{color:var(--lose)}
+.log{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--felt-deep);border-radius:12px;padding:10px 12px;max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.log .hl{color:var(--ink)}
+details{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--felt-deep)}
+summary{cursor:pointer;font-family:var(--display);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--brass)}
+details ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Sviten Special</h1>
+    <span class="conn" id="conn" hidden>Offline</span>
+  </header>
+
+  <!-- landing -->
+  <section id="landing" hidden>
+    <div class="panel">
+      <h2>Heads-up table</h2>
+      <p>Pot limit, blinds 1/2, 200 big blinds each. Create a table, send the link to a friend, and deal.</p>
+      <button class="primary" id="create">Create a table</button>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <label for="joincode">Have a code?</label>
+      <div class="invite"><input type="text" id="joincode" placeholder="e.g. K7Q2" autocomplete="off" autocapitalize="characters" maxlength="8"><button id="join">Join</button></div>
+    </div>
+  </section>
+
+  <!-- table -->
+  <section id="game" hidden style="display:flex;flex-direction:column;gap:12px">
+    <div class="panel" id="invitePanel">
+      <label>Invite link</label>
+      <div class="invite"><code id="inviteUrl"></code><button class="small" id="share">Share</button></div>
+    </div>
+    <div class="panel" id="namePanel" hidden>
+      <label for="pname">Your name</label>
+      <input type="text" id="pname" maxlength="20" autocomplete="nickname" placeholder="Name shown at the table">
+    </div>
+    <div class="seats" id="seats"></div>
+
+    <div class="table" aria-label="Table">
+      <div class="seat">
+        <div class="seat-head"><span class="name" id="oname">Opponent</span><span class="stack" id="ostack"></span><span class="chip" id="obtn" hidden></span><span class="chip" id="odrew" hidden></span></div>
+        <div class="cards" id="ocards"></div>
+        <div class="betline" id="obet"></div>
+      </div>
+      <div class="mid">
+        <span class="street" id="street"></span>
+        <div class="cards" id="board"></div>
+        <span class="pot" id="pot"></span>
+      </div>
+      <div class="seat">
+        <div class="betline" id="mbet"></div>
+        <div class="cards" id="mcards"></div>
+        <div class="seat-head" style="margin-top:6px"><span class="name" id="mname">You</span><span class="stack" id="mstack"></span><span class="chip" id="mbtn" hidden></span><span class="chip" id="mdrew" hidden></span></div>
+        <div class="read" id="read"></div>
+      </div>
+    </div>
+
+    <div class="status" id="status" aria-live="polite">Connecting to the table…</div>
+    <div class="controls" id="controls"></div>
+    <div class="log" id="log" aria-label="Hand log"></div>
+    <div class="foot" id="foot"></div>
+  </section>
+
+  <details>
+    <summary>How Sviten plays</summary>
+    <ol>
+      <li>Each player gets 5 cards. Betting round, pot limit.</li>
+      <li>Flop (3 cards). Betting round.</li>
+      <li>Draw: swap any number of your 5 cards, or stand pat. The big blind draws first, the button last. Draw exactly one and the new card is dealt face up: keep it, or reject it and take a face-down card you must keep. A kept face-up card stays visible to your opponent.</li>
+      <li>Turn, betting. River, betting.</li>
+      <li>Showdown splits the pot. Half to the best 5-card hand you hold (no board). Half to the best Omaha hand: exactly 2 of your cards plus 3 from the board.</li>
+    </ol>
+  </details>
+</div>
+
+<script type="module">
+import { legal, eval5, omaha, handName, cs, RN, SUITS, same, potTotal } from '/engine.js';
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { } }
+};
+const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const newCode = () => { const b = new Uint32Array(4); crypto.getRandomValues(b); return [...b].map(x => ALPHA[x % ALPHA.length]).join(''); };
+
+const pm = location.pathname.match(/^\/t\/([A-Za-z2-9]{4,8})\/?$/);
+const code = pm ? pm[1].toUpperCase() : null;
+
+if (!code) {
+  $('landing').hidden = false;
+  $('create').onclick = () => { location.href = '/t/' + newCode(); };
+  const go = () => { const c = $('joincode').value.trim().toUpperCase(); if (/^[A-Z2-9]{4,8}$/.test(c)) location.href = '/t/' + c; else $('joincode').focus(); };
+  $('join').onclick = go;
+  $('joincode').onkeydown = e => { if (e.key === 'Enter') go(); };
+} else startTable();
+
+function startTable() {
+  $('game').hidden = false; $('conn').hidden = false;
+  document.title = `Table ${code} · Sviten Special`;
+  let token = store.get('sviten-token-' + code);
+  if (!token) { token = crypto.randomUUID(); store.set('sviten-token-' + code, token); }
+  const link = `${location.origin}/t/${code}`;
+  $('inviteUrl').textContent = link;
+  $('share').onclick = async () => {
+    if (navigator.share) { try { await navigator.share({ title: 'Sviten heads-up', text: 'Join my Sviten table', url: link }); return; } catch { } }
+    try { await navigator.clipboard.writeText(link); $('share').textContent = 'Copied'; setTimeout(() => $('share').textContent = 'Share', 1500); }
+    catch { const r = document.createRange(); r.selectNodeContents($('inviteUrl')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+  };
+  $('pname').value = store.get('sviten-name') || '';
+  $('pname').oninput = () => { store.set('sviten-name', $('pname').value.trim()); render(); };
+
+  let ws = null, V = null, retry = 0, pending = false, flash = '', sel = new Set(), raiseVal = null, confirmReset = false;
+
+  function connect() {
+    ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/' + code);
+    ws.onopen = () => { retry = 0; setConn(true); ws.send(JSON.stringify({ t: 'hello', token })); };
+    ws.onmessage = e => {
+      let m; try { m = JSON.parse(e.data); } catch { return; }
+      if (m.t === 'state') {
+        if (!V || V.phase !== m.phase || V.drawer !== m.drawer) sel = new Set();
+        V = m; pending = false; render();
+      } else if (m.t === 'error') { flash = m.msg; pending = false; render(); }
+    };
+    ws.onclose = () => { setConn(false); setTimeout(connect, Math.min(5000, 400 * 2 ** retry++)); };
+  }
+  function setConn(on) { $('conn').className = 'conn' + (on ? ' on' : ''); $('conn').textContent = on ? 'Live' : 'Reconnecting'; }
+  function send(o) {
+    if (!ws || ws.readyState !== 1) { flash = 'Reconnecting. Try again in a second.'; render(); return; }
+    flash = ''; pending = true; ws.send(JSON.stringify(o)); render();
+    setTimeout(() => { if (pending) { pending = false; render(); } }, 5000);
+  }
+  connect();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && ws && ws.readyState > 1) { retry = 0; connect(); } });
+
+  const nm = i => i === V.seat ? 'You' : (V.names[i] || `Seat ${i + 1}`);
+  const fill = t => t.replace(/@(\d)/g, (_, d) => nm(+d));
+  const esc = t => String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  const fillH = t => esc(fill(t));
+  function cardEl(c, back) {
+    const d = document.createElement('div');
+    if (c === undefined) { d.className = 'card empty'; return d; }
+    if (back || !c) { d.className = 'card back'; d.setAttribute('aria-label', 'Face-down card'); return d; }
+    d.className = 'card s' + c.s;
+    d.innerHTML = `<span class="r">${RN(c.r)}</span><span class="s">${SUITS[c.s]}</span>`;
+    d.setAttribute('aria-label', RN(c.r) + ' of ' + ['spades', 'hearts', 'diamonds', 'clubs'][c.s]);
+    return d;
+  }
+  function mk(txt, cls, fn, dis) { const b = document.createElement('button'); b.textContent = txt; if (cls) b.className = cls; b.onclick = fn; b.disabled = !!dis; return b; }
+
+  function render() {
+    if (!V) return;
+    const ms = V.seat, seated = ms >= 0, me = seated ? ms : 0, op = 1 - me;
+    const inHand = !!V.hands;
+    const myName = $('pname').value.trim();
+
+    $('invitePanel').hidden = V.seated[0] && V.seated[1];
+    $('namePanel').hidden = seated || (V.seated[0] && V.seated[1]);
+
+    const sb = $('seats'); sb.innerHTML = '';
+    for (let i = 0; i < 2; i++) {
+      const c = document.createElement('div'); c.className = 'seatcard' + (i === ms ? ' mine' : '');
+      const l = document.createElement('span'); l.className = 'lbl'; l.textContent = `Seat ${i + 1}`;
+      const w = document.createElement('span'); w.className = 'who';
+      w.textContent = V.seated[i] ? nm(i) : 'Empty';
+      c.append(l, w);
+      if (!V.seated[i] && !seated) c.appendChild(mk(myName ? 'Take seat' : 'Enter your name', 'small primary', () => send({ t: 'sit', seat: i, name: myName }), !myName || pending));
+      sb.appendChild(c);
+    }
+
+    $('oname').textContent = nm(op); $('mname').textContent = nm(me);
+    $('ostack').textContent = V.stacks[op]; $('mstack').textContent = V.stacks[me];
+    const tag = (el, i) => { el.hidden = !inHand; el.textContent = V.button === i ? 'Button' : 'BB'; el.className = 'chip' + (V.button === i ? ' btn' : ''); };
+    tag($('obtn'), op); tag($('mbtn'), me);
+    const drewTag = (el, i) => { const n = inHand ? V.drew[i] : null; el.hidden = n == null; el.textContent = n === 0 ? 'Pat' : `Drew ${n}`; };
+    drewTag($('odrew'), op); drewTag($('mdrew'), me);
+    $('obet').textContent = inHand && V.bets[op] ? `Bet ${V.bets[op]}` : '';
+    $('mbet').textContent = inHand && V.bets[me] ? `Bet ${V.bets[me]}` : '';
+    $('street').textContent = V.phase === 'matchover' ? 'Match over' : inHand ? V.street : 'Waiting for players';
+    $('pot').textContent = inHand ? `Pot ${potTotal(V)}` : '';
+
+    const drawSeat = (box, i) => {
+      box.innerHTML = ''; if (!inHand) return;
+      V.hands[i].forEach((c, k) => {
+        const ex = V.phase === 'expose' && V.drawer === i && k === V.expIdx;
+        const el = cardEl(ex ? V.expCard : c, false);
+        if (ex) el.classList.add('exposed');
+        else if (!V.reveal && c && same(c, V.shown[i])) el.classList.add('shown');
+        if (i === ms && V.phase === 'draw' && V.drawer === i) {
+          el.classList.add('pick'); el.tabIndex = 0; el.setAttribute('role', 'button');
+          if (sel.has(k)) el.classList.add('sel');
+          const tog = () => { sel.has(k) ? sel.delete(k) : sel.add(k); render(); };
+          el.onclick = tog; el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tog(); } };
+        }
+        box.appendChild(el);
+      });
+    };
+    drawSeat($('ocards'), op); drawSeat($('mcards'), me);
+    const bo = $('board'); bo.innerHTML = '';
+    for (let i = 0; i < 5; i++) bo.appendChild(cardEl(inHand ? V.board[i] : undefined));
+
+    if (seated && inHand) {
+      const ph = V.hands[me].slice(); if (V.phase === 'expose' && V.drawer === me) ph[V.expIdx] = V.expCard;
+      const o = V.board.length >= 3 ? handName(omaha(ph, V.board)) : null;
+      $('read').innerHTML = `Draw: <b>${handName(eval5(ph))}</b>` + (o ? ` · Omaha: <b>${o}</b>` : '');
+    } else $('read').textContent = '';
+
+    const st = $('status'); let html = '';
+    if (flash) html = `<span class="l"></span>`;
+    else if (V.phase === 'waiting') html = V.seated[0] && V.seated[1] ? (seated ? 'Both seats are taken. Deal when ready.' : 'Two players are seated. You are watching.') : seated ? 'Send the invite link to your friend.' : 'Enter your name and take a seat.';
+    else if (V.phase === 'matchover') html = `<span class="${seated ? (V.stacks[me] > 0 ? 'w' : 'l') : ''}">${fillH(V.stacks[0] > 0 ? '@0' : '@1')} won the match.</span>`;
+    else if (V.phase === 'over' && V.result) {
+      const R = V.result;
+      if (R.kind === 'fold') html = `<span class="${seated ? (R.winner === ms ? 'w' : 'l') : ''}">${fillH('@' + R.winner)} took ${R.tot}</span>`;
+      else {
+        const net = R.won[me] - R.won[op];
+        const head = R.dw === R.ow && R.dw >= 0 ? `${fillH('@' + R.dw)} scooped ${R.tot}` : `Split. ${fillH('@0')} ${R.won[0]}, ${fillH('@1')} ${R.won[1]}`;
+        const lab = w => w < 0 ? 'Split' : fillH('@' + w);
+        html = `<span class="${seated ? (net > 0 ? 'w' : net < 0 ? 'l' : '') : ''}">${head}</span><br><small style="color:var(--muted)">Draw: ${lab(R.dw)} · Omaha: ${lab(R.ow)}</small>`;
+      }
+    }
+    else if (V.phase === 'bet') html = V.toAct === ms ? 'Your turn.' : `Waiting for ${esc(nm(V.toAct))}.`;
+    else if (V.phase === 'draw') html = V.drawer === ms ? 'Tap the cards to swap. Draw exactly one and it comes face up.' : `${esc(nm(V.drawer))} is drawing.`;
+    else if (V.phase === 'expose') html = V.drawer === ms ? 'Your card is face up. Keep it, or reject it for a blind card you must keep.' : `${esc(nm(V.drawer))} is deciding on the face-up card.`;
+    st.innerHTML = html;
+    if (flash) st.firstChild.textContent = flash;
+
+    renderControls(ms, seated, me, op);
+
+    const lg = $('log'); lg.innerHTML = '';
+    const VERB = /@(\d) (sits|posts|takes|draws|stands|keeps|rejects|leaves)\b/g;
+    const fillLog = t => {
+      let out = t.replace(VERB, (_, d, v) => +d === V.seat ? 'You ' + v.slice(0, -1) : nm(+d) + ' ' + v);
+      if (V.seat >= 0) out = out.replace(new RegExp('^@' + V.seat + '( rejects.*) and takes '), '@' + V.seat + '$1 and take ').replace(/^You (reject.*) and takes /, 'You $1 and take ');
+      return fill(out);
+    };
+    V.log.forEach(l => { const d = document.createElement('div'); d.textContent = fillLog(l.t); if (l.hl) d.className = 'hl'; lg.appendChild(d); });
+    lg.scrollTop = lg.scrollHeight;
+
+    const ft = $('foot'); ft.innerHTML = '';
+    if (seated) {
+      if (['waiting', 'over', 'matchover'].includes(V.phase)) ft.appendChild(mk('Leave seat', 'link', () => send({ t: 'leave' }), pending));
+      if (!confirmReset) ft.appendChild(mk('Reset table', 'link', () => { confirmReset = true; render(); }));
+      else {
+        const r = document.createElement('div'); r.className = 'row'; r.style.width = '100%';
+        r.append(mk('Clear seats and chips', 'fold', () => { confirmReset = false; send({ t: 'reset' }); }), mk('Keep playing', null, () => { confirmReset = false; render(); }));
+        ft.appendChild(r);
+      }
+    }
+  }
+
+  function renderControls(ms, seated) {
+    const c = $('controls'); c.innerHTML = '';
+    if (!seated) return;
+    const row = (...b) => { const r = document.createElement('div'); r.className = 'row'; r.append(...b); c.appendChild(r); };
+    if (V.phase === 'waiting') { if (V.seated[0] && V.seated[1]) row(mk('Deal first hand', 'primary', () => send({ t: 'deal' }), pending)); return; }
+    if (V.phase === 'matchover') { row(mk('New match', 'primary', () => send({ t: 'newmatch' }), pending)); return; }
+    if (V.phase === 'over') {
+      const dealer = 1 - V.button;
+      if (dealer === ms) row(mk('Deal next hand', 'primary', () => send({ t: 'deal' }), pending));
+      else { const p = document.createElement('div'); p.className = 'status'; p.textContent = `${nm(dealer)} deals the next hand.`; c.appendChild(p); }
+      return;
+    }
+    if (V.phase === 'draw') {
+      if (V.drawer !== ms) return;
+      const n = sel.size;
+      const b = [mk(n ? `Draw ${n}` : 'Stand pat', 'primary', () => send({ t: 'draw', idx: [...sel] }), pending)];
+      if (n) b.push(mk('Clear', null, () => { sel = new Set(); render(); }));
+      row(...b); return;
+    }
+    if (V.phase === 'expose') {
+      if (V.drawer !== ms) return;
+      row(mk(`Keep ${cs(V.expCard)}`, 'primary', () => send({ t: 'expose', keep: true }), pending), mk('Reject, take blind', null, () => send({ t: 'expose', keep: false }), pending));
+      return;
+    }
+    if (V.phase !== 'bet') return;
+    const mine = V.toAct === ms && !pending;
+    const L = legal(V, ms);
+    let rb = null;
+    if (L.canRaise) {
+      const sl = document.createElement('div'); sl.className = 'slider';
+      const inp = document.createElement('input'); inp.type = 'range'; inp.id = 'raise'; inp.min = L.minTo; inp.max = L.maxTo; inp.step = 1;
+      inp.value = raiseVal && raiseVal >= L.minTo && raiseVal <= L.maxTo ? raiseVal : L.minTo; inp.disabled = !mine;
+      inp.setAttribute('aria-label', 'Bet size');
+      const out = document.createElement('output'); out.textContent = inp.value;
+      rb = mk((L.mb === 0 ? 'Bet ' : 'Raise to ') + inp.value, 'primary', () => send({ t: 'act', type: 'raise', amt: +inp.value }), !mine);
+      inp.oninput = () => { out.textContent = inp.value; raiseVal = +inp.value; rb.textContent = (L.mb === 0 ? 'Bet ' : 'Raise to ') + inp.value; };
+      sl.append(inp, out); c.appendChild(sl);
+      const setv = v => { inp.value = Math.max(L.minTo, Math.min(L.maxTo, Math.round(v))); inp.oninput(); };
+      row(mk('Min', 'small', () => setv(L.minTo), !mine), mk('½ Pot', 'small', () => setv(L.mb + (L.pt + L.toCall) / 2), !mine), mk('Pot', 'small', () => setv(L.maxTo), !mine));
+    }
+    const b = [];
+    if (L.toCall > 0) b.push(mk('Fold', 'fold', () => send({ t: 'act', type: 'fold' }), !mine));
+    b.push(mk(L.toCall > 0 ? `Call ${L.callAmt}` : 'Check', null, () => send({ t: 'act', type: 'call' }), !mine));
+    if (rb) b.push(rb);
+    row(...b);
+  }
+}
+</script>
+</body>
+</html>
